@@ -1,10 +1,10 @@
-
 import React from 'react';
 import { Link } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { useAnalysis } from '@/context/AnalysisContext';
 import Navbar from '@/components/Navbar';
+import { Progress } from '@/components/ui/progress';
 
 const Results: React.FC = () => {
   const { results } = useAnalysis();
@@ -42,6 +42,11 @@ const Results: React.FC = () => {
     });
   };
 
+  // Function to convert confidence to percentage
+  const confidencePercentage = (confidence: number) => {
+    return Math.round(confidence * 100);
+  };
+
   return (
     <div className="min-h-screen flex flex-col">
       <Navbar />
@@ -57,8 +62,9 @@ const Results: React.FC = () => {
           
           <div className="bg-white p-6 rounded-lg shadow-lg">
             <Tabs defaultValue="details" className="w-full">
-              <TabsList className="grid grid-cols-4 mb-8">
+              <TabsList className="grid grid-cols-5 mb-8">
                 <TabsTrigger value="details">Details</TabsTrigger>
+                <TabsTrigger value="symptoms">Symptoms</TabsTrigger>
                 <TabsTrigger value="remedies">Home Remedies</TabsTrigger>
                 <TabsTrigger value="products">Recommended Products</TabsTrigger>
                 <TabsTrigger value="history">Analysis History</TabsTrigger>
@@ -82,6 +88,16 @@ const Results: React.FC = () => {
                       <p className="text-2xl text-dermiq-maroon font-semibold">
                         {mostRecentResult.disease}
                       </p>
+                      
+                      {mostRecentResult.confidence && (
+                        <div className="mt-4">
+                          <p className="font-semibold mb-2">Confidence Level: {confidencePercentage(mostRecentResult.confidence)}%</p>
+                          <Progress 
+                            value={confidencePercentage(mostRecentResult.confidence)} 
+                            className="h-2 bg-gray-200"
+                          />
+                        </div>
+                      )}
                     </div>
                     
                     <div>
@@ -131,6 +147,30 @@ const Results: React.FC = () => {
                       )}
                     </div>
                   </div>
+                </div>
+              </TabsContent>
+              
+              <TabsContent value="symptoms" className="p-4">
+                <h3 className="text-2xl font-bold mb-6">Common Symptoms of {mostRecentResult.disease}</h3>
+                {mostRecentResult.symptoms && mostRecentResult.symptoms.length > 0 ? (
+                  <ul className="space-y-4 list-disc pl-5">
+                    {mostRecentResult.symptoms.map((symptom, index) => (
+                      <li key={index} className="text-lg">
+                        {symptom}
+                      </li>
+                    ))}
+                  </ul>
+                ) : (
+                  <p>No symptoms information available.</p>
+                )}
+                
+                <div className="mt-8 p-4 bg-dermiq-cream rounded-md">
+                  <h4 className="text-lg font-semibold mb-2">Important Note:</h4>
+                  <p>
+                    These symptoms are common indicators of {mostRecentResult.disease}. However, symptoms can vary from person 
+                    to person. If you're experiencing these or other concerning symptoms, please consult with a dermatologist 
+                    for a proper diagnosis.
+                  </p>
                 </div>
               </TabsContent>
               

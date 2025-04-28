@@ -18,7 +18,6 @@ const Analyze: React.FC = () => {
   const [image, setImage] = useState<File | null>(null);
   const [previewUrl, setPreviewUrl] = useState<string | null>(null);
   const [isAnalyzing, setIsAnalyzing] = useState(false);
-  
   const navigate = useNavigate();
   const { toast } = useToast();
   const { addResult } = useAnalysis();
@@ -38,131 +37,81 @@ const Analyze: React.FC = () => {
   };
 
   // Simulate analysis process
-  const handleAnalyze = async () => {
-    if (!image) {
-      toast({
-        title: "Error",
-        description: "Please upload an image to analyze",
-        variant: "destructive"
-      });
-      return;
+  // Modify handleAnalyze to send image to your Flask backend for analysis
+const handleAnalyze = async () => {
+  if (!image) {
+    toast({
+      title: "Error",
+      description: "Please upload an image to analyze",
+      variant: "destructive"
+    });
+    return;
+  }
+  
+  setIsAnalyzing(true);
+  
+  try {
+    // Create form data to send image
+    const formData = new FormData();
+    formData.append('image', image);
+    
+    // Add user data to the form
+    formData.append('name', name);
+    formData.append('age', age);
+    formData.append('gender', gender);
+    formData.append('skinType', skinType);
+    formData.append('allergies', allergies);
+    
+    // Send image to your Flask backend for analysis
+    const response = await fetch('http://localhost:5000/api/analyze', {
+      method: 'POST',
+      body: formData,
+    });
+    
+    if (!response.ok) {
+      throw new Error('Failed to analyze image');
     }
     
-    setIsAnalyzing(true);
+    // Get analysis result
+    const result = await response.json();
     
-    try {
-      // Simulate API delay
-      await new Promise(resolve => setTimeout(resolve, 2000));
-      
-      // Mock diseases data
-      const diseases = [
-        {
-          name: "Eczema",
-          description: "Eczema is a condition where patches of skin become inflamed, itchy, red, cracked, and rough.",
-          remedies: [
-            "Apply moisturizer frequently",
-            "Use gentle, fragrance-free products",
-            "Take lukewarm (not hot) baths",
-            "Use a humidifier",
-            "Try to identify and avoid triggers"
-          ],
-          products: [
-            { 
-              name: "Hydrating Cleanser", 
-              imageUrl: "/lovable-uploads/67470ab7-bf23-42ad-9043-88dbbd73f5d5.png",
-              description: "Gentle, non-foaming cleanser for sensitive skin"
-            },
-            { 
-              name: "Barrier Repair Cream", 
-              imageUrl: "/lovable-uploads/daa6cfca-3cff-4f73-bc3e-16ffa8cfabfd.png",
-              description: "Restores the skin's protective barrier"
-            }
-          ]
-        },
-        {
-          name: "Psoriasis",
-          description: "Psoriasis is a skin disorder that causes skin cells to multiply up to 10 times faster than normal.",
-          remedies: [
-            "Apply moisturizing creams regularly",
-            "Take daily baths with gentle cleansers",
-            "Avoid dry air and cold weather",
-            "Use a humidifier",
-            "Expose your skin to small amounts of sunlight"
-          ],
-          products: [
-            { 
-              name: "Coal Tar Shampoo", 
-              imageUrl: "/lovable-uploads/67470ab7-bf23-42ad-9043-88dbbd73f5d5.png",
-              description: "Reduces scaling, itching and inflammation"
-            },
-            { 
-              name: "Salicylic Acid Ointment", 
-              imageUrl: "/lovable-uploads/daa6cfca-3cff-4f73-bc3e-16ffa8cfabfd.png",
-              description: "Helps remove scales and smooth skin"
-            }
-          ]
-        },
-        {
-          name: "Ringworm",
-          description: "Ringworm is a common fungal infection that affects the skin, hair and nails.",
-          remedies: [
-            "Keep affected areas clean and dry",
-            "Apply antifungal cream as directed",
-            "Don't share personal items",
-            "Change socks and underwear daily",
-            "Treat pets if they are the source"
-          ],
-          products: [
-            { 
-              name: "Antifungal Cream", 
-              imageUrl: "/lovable-uploads/67470ab7-bf23-42ad-9043-88dbbd73f5d5.png",
-              description: "Combats fungal infections"
-            },
-            { 
-              name: "Medicated Soap", 
-              imageUrl: "/lovable-uploads/daa6cfca-3cff-4f73-bc3e-16ffa8cfabfd.png",
-              description: "Helps cleanse infected areas"
-            }
-          ]
-        }
-      ];
-      
-      // Randomly select a disease for demonstration
-      const randomDisease = diseases[Math.floor(Math.random() * diseases.length)];
-      
-      // Add the result
-      addResult({
-        disease: randomDisease.name,
-        description: randomDisease.description,
-        imageUrl: previewUrl as string,
-        remedies: randomDisease.remedies,
-        products: randomDisease.products,
-        userDetails: {
-          name,
-          age: parseInt(age),
-          gender,
-          skinType,
-          allergies: allergies.split(',').map(item => item.trim()),
-        }
-      });
-      
-      // Navigate to the results page
-      navigate('/results');
-      
-      toast({
-        title: "Analysis Complete",
-        description: `Your skin has been analyzed. We've identified ${randomDisease.name}.`,
-      });
-    } catch (error) {
-      toast({
-        title: "Error",
-        description: "Failed to analyze skin. Please try again.",
-        variant: "destructive"
-      });
-    } finally {
-      setIsAnalyzing(false);
-    }
-  };
+    // Add the result with user details
+    addResult({
+      disease: result.disease,
+      description: result.description,
+      imageUrl: previewUrl as string,
+      remedies: result.remedies || [],
+      products: result.products || [],
+      symptoms: result.symptoms || [],
+      confidence: result.confidence || 0,
+      userDetails: {
+        name,
+        age: parseInt(age),
+        gender,
+        skinType,
+        allergies: allergies.split(',').map(item => item.trim()),
+      },
+      date: new Date().toString() // Add current date
+    });
+    
+    // Navigate to the results page
+    navigate('/results');
+    
+    toast({
+      title: "Analysis Complete",
+      description: `Your skin has been analyzed. We've identified ${result.disease}.`,
+    });
+  } catch (error) {
+    console.error('Analysis error:', error);
+    toast({
+      title: "Error",
+      description: "Failed to analyze skin. Please try again.",
+      variant: "destructive"
+    });
+  } finally {
+    setIsAnalyzing(false);
+  }
+};
 
   return (
     <div className="min-h-screen flex flex-col">

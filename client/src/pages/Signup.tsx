@@ -37,10 +37,10 @@ const Signup: React.FC = () => {
         description: "Account created successfully",
       });
       navigate('/analyze');
-    } catch (error) {
+    } catch (error: any) {
       toast({
         title: "Error",
-        description: "Failed to create account. Please try again.",
+        description: error.message || "Failed to create account. Please try again.",
         variant: "destructive"
       });
     } finally {
